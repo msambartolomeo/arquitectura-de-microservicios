@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+    prometheus:
+        image: prom/prometheus:v2.46.0
+        container_name: prom
+        ports:
+            - 8080:9090
+        restart: unless-stopped
+        links:
+            - dummy_app
+        networks:
+            - dummy
+            - dmz
+        volumes:
+            - prom_data:/prometheus
+            # NOTE: La z arregla problemas de permisos
+            - ./prometheus.yaml:/etc/prometheus/prometheus.yml:ro,z
+        depends_on:
+            dummy:
+                condition: service_started
+
+    dummy:
+        image: isagues/dummy_exporter:1.0
+        container_name: dummy
+        networks:
+            - dummy
+
+networks:
+    dummy:
+        name: backend_network_dummy
+        internal: true
+    dmz:
+        name: backend_network_dmz
+
+volumes:
+    prom_data:
+        name: prom_data

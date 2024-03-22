@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+    db:
+        image: postgres:16
+        networks:
+            - db_net
+        volumes:
+            - db_vol:/var/lib/postgresql/data
+        env_file:
+            - db.env
+
+    pgadm:
+        image: dpage/pgadmin4
+        networks:
+            - db_net
+            - default
+        ports:
+            - 8080:80
+        env_file:
+            - admin.env
+
+networks:
+    db_net:
+        internal: true
+    default:
+
+volumes:
+    db_vol:
