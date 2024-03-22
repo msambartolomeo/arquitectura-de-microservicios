@@ -1,0 +1,89 @@
+version: "3.8"
+
+services:
+    gateway:
+        build:
+            context: ./gateway
+        ports:
+            - 8000:8000
+        env_file:
+            - ./gateway/.env
+        links:
+            - mq
+        depends_on:
+            mq:
+                condition: service_healthy
+        networks:
+            - default
+            - mq
+
+    trips:
+        build:
+            context: ./trips
+        env_file:
+            - ./trips/.env
+        links:
+            - mq
+            - redis-trips
+        depends_on:
+            mq:
+                condition: service_healthy
+            redis-trips:
+                condition: service_healthy
+        networks:
+            - trips
+            - mq
+
+    redis-trips:
+        image: redis:7-alpine
+        healthcheck:
+            test: redis-cli ping
+            interval: 5s
+        networks:
+            - trips
+
+    airports:
+        build:
+            context: ./airports
+        env_file:
+            - ./airports/.env
+        links:
+            - mq
+            - redis-airports
+        depends_on:
+            mq:
+                condition: service_healthy
+            redis-airports:
+                condition: service_healthy
+        networks:
+            - airports
+            - mq
+
+    redis-airports:
+        image: redis:7-alpine
+        healthcheck:
+            test: redis-cli ping
+            interval: 5s
+        networks:
+            - airports
+
+    mq:
+        image: rabbitmq:3-management
+        networks:
+            - mq
+        # NOTE: No anda por un tema de permisos con la cookie ni idea
+        # healthcheck:
+        #     test: rabbitmq-diagnostics -q ping
+        #     interval: 5s
+
+networks:
+    airports:
+        driver: bridge
+        internal: true
+    trips:
+        driver: bridge
+        internal: true
+    mq:
+        driver: bridge
+        internal: true
+    default:
